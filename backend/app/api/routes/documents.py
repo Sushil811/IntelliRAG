@@ -20,16 +20,17 @@ embedding_provider = GeminiEmbeddingProvider()
 ingestion_service = DocumentIngestionService(qdrant_service, embedding_provider)
 
 import asyncio
-from app.db.session import AsyncSessionLocal
+from app.models.document import Document, DocumentChunk, DocumentStatus
 
-async def process_document_task(file_content: bytes, file_type: str, document_id: str, tenant_id: str):
+async def process_document_task(file_content: bytes, file_type: str, document_id: str, tenant_id: str, document_name: str = "document.pdf"):
     try:
-        await asyncio.to_thread(
+        chunks, metadatas = await asyncio.to_thread(
             ingestion_service.process_document, 
             file_content, 
             file_type, 
             document_id, 
-            tenant_id
+            tenant_id,
+            document_name
         )
         async with AsyncSessionLocal() as session:
             result = await session.execute(
@@ -38,6 +39,16 @@ async def process_document_task(file_content: bytes, file_type: str, document_id
             doc = result.scalars().first()
             if doc:
                 doc.status = DocumentStatus.READY
+                for meta in metadatas:
+                    chunk_rec = DocumentChunk(
+                        id=uuid.UUID(meta["chunk_id"]),
+                        document_id=uuid.UUID(document_id),
+                        chunk_index=meta["chunk_index"],
+                        page_number=meta.get("page_number"),
+                        text_content=meta["text"],
+                        metadata_json=meta
+                    )
+                    session.add(chunk_rec)
                 await session.commit()
     except Exception as e:
         print(f"Error processing document {document_id}: {e}")
@@ -88,10 +99,12 @@ async def upload_document(
         content,
         ext,
         str(doc.id),
-        str(current_user.organization_id)
+        str(current_user.organization_id),
+        doc.name
     )
     
     return {"message": "Document uploaded successfully", "document_id": doc.id}
+
 
 @router.get("/")
 async def list_documents(

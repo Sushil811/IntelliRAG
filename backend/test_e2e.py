@@ -1,9 +1,11 @@
 import asyncio
+import pytest
 import httpx
 import uuid
 
 BASE_URL = "http://localhost:8000/api"
 
+@pytest.mark.asyncio
 async def test_e2e_flow():
     # 1. Start test using AsyncClient on FastAPI app directly or running server
     from app.main import app

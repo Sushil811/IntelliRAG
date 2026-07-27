@@ -1,8 +1,10 @@
 import asyncio
+import pytest
 from app.services.rag.qdrant_service import QdrantService
 from app.db.session import AsyncSessionLocal
 from sqlalchemy import text
 
+@pytest.mark.asyncio
 async def test_all():
     print("Testing Supabase PostgreSQL Connection...")
     try:

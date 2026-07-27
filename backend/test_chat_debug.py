@@ -1,8 +1,10 @@
 import asyncio
+import pytest
 import httpx
 from app.main import app
 from httpx import ASGITransport
 
+@pytest.mark.asyncio
 async def test_chat():
     transport = ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://localhost:8000/api") as client:
