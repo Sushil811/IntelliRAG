@@ -47,8 +47,11 @@ class RAGPipeline:
     def process_query(self, query: str, tenant_id: str, chat_history: str = "", document_id: Optional[str] = None) -> Dict[str, Any]:
         start_time = time.time()
         
-        # 1. Query Rewriting
-        rewritten_query = self.query_rewriter.rewrite(query, chat_history)
+        # 1. Query Rewriting (Skip LLM rewrite if chat history is empty to save ~2 seconds)
+        if chat_history and chat_history.strip():
+            rewritten_query = self.query_rewriter.rewrite(query, chat_history)
+        else:
+            rewritten_query = query
         
         # 2. Vector Search via Qdrant
         vector_results = []
@@ -61,7 +64,7 @@ class RAGPipeline:
                 top_k=5
             )
         except Exception as e:
-            print(f"Vector search failed: {e}")
+            print(f"Error generating query embedding or searching vector store: {e}")
         
         # 3. BM25 Search
         bm25_results = self.bm25.search(rewritten_query, tenant_id, document_id)
@@ -69,8 +72,11 @@ class RAGPipeline:
         # 4. Hybrid Search (RRF)
         fused_results = reciprocal_rank_fusion(vector_results, bm25_results)
         
-        # 5. Reranking
-        reranked_results = self.reranker.rerank(rewritten_query, fused_results, top_n=5)
+        # 5. Reranking (Skip Cohere HTTP call if candidate list is <= 1 to save ~300ms)
+        if len(fused_results) > 1:
+            reranked_results = self.reranker.rerank(rewritten_query, fused_results, top_n=5)
+        else:
+            reranked_results = fused_results[:5]
         
         # 6. Context Compression & Prompt Construction
         context = "\n\n".join([f"Source [{r.get('document_name', 'Unknown')}, Page {r.get('page_number', 'N/A')}]:\n{r.get('text', '')}" for r in reranked_results])

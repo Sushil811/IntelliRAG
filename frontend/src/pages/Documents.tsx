@@ -36,7 +36,11 @@ export default function Documents() {
       const response = await authAxios.get('/documents/');
       return response.data;
     },
-    refetchInterval: 3000 // Poll every 3s to update background processing status
+    refetchInterval: (query) => {
+      const data = query.state.data as DocumentItem[] | undefined;
+      const hasProcessing = data?.some(d => d.status?.toLowerCase() === 'processing');
+      return hasProcessing ? 3000 : false;
+    }
   });
 
   // Upload document mutation
