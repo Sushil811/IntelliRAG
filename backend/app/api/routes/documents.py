@@ -4,10 +4,10 @@ from sqlalchemy import select
 from typing import List
 import uuid
 
-from app.db.session import get_db
+from app.db.session import get_db, AsyncSessionLocal
 from app.api.deps import get_current_user
 from app.models.user import User
-from app.models.document import Document, DocumentStatus
+from app.models.document import Document, DocumentChunk, DocumentStatus
 from app.services.documents.ingestion import DocumentIngestionService
 from app.services.rag.qdrant_service import QdrantService
 from app.services.embeddings.gemini import GeminiEmbeddingProvider
@@ -20,7 +20,6 @@ embedding_provider = GeminiEmbeddingProvider()
 ingestion_service = DocumentIngestionService(qdrant_service, embedding_provider)
 
 import asyncio
-from app.models.document import Document, DocumentChunk, DocumentStatus
 
 async def process_document_task(file_content: bytes, file_type: str, document_id: str, tenant_id: str, document_name: str = "document.pdf"):
     try:
