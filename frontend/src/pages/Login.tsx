@@ -21,7 +21,12 @@ export default function Login() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+      const detail = err.response?.data?.detail;
+      if (detail === 'Incorrect email or password') {
+        setError('Incorrect email or password. If you do not have an account yet, please click "Create Account" below.');
+      } else {
+        setError(detail || 'Login failed. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }
