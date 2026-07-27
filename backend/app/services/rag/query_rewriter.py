@@ -28,16 +28,20 @@ Standalone Query:"""
         if not chat_history:
             return query
             
-        chain = self.prompt | self.llm
-        result = chain.invoke({
-            "chat_history": chat_history,
-            "query": query
-        })
-        
-        content = result.content
-        if isinstance(content, list):
-            content = "".join([part.get("text", "") if isinstance(part, dict) else str(part) for part in content])
-        elif not isinstance(content, str):
-            content = str(content)
+        try:
+            chain = self.prompt | self.llm
+            result = chain.invoke({
+                "chat_history": chat_history,
+                "query": query
+            })
             
-        return content.strip()
+            content = result.content
+            if isinstance(content, list):
+                content = "".join([part.get("text", "") if isinstance(part, dict) else str(part) for part in content])
+            elif not isinstance(content, str):
+                content = str(content)
+                
+            return content.strip()
+        except Exception as e:
+            print(f"Query rewriter exception (using raw query): {e}")
+            return query

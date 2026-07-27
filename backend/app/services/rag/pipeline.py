@@ -90,13 +90,25 @@ Context:
         ]
         
         # 7. LLM Call
-        response = self.llm.invoke(messages)
-        
-        answer = response.content
-        if isinstance(answer, list):
-            answer = "".join([part.get("text", "") if isinstance(part, dict) else str(part) for part in answer])
-        elif not isinstance(answer, str):
-            answer = str(answer)
+        response_usage = {}
+        try:
+            response = self.llm.invoke(messages)
+            answer = response.content
+            if isinstance(answer, list):
+                answer = "".join([part.get("text", "") if isinstance(part, dict) else str(part) for part in answer])
+            elif not isinstance(answer, str):
+                answer = str(answer)
+            response_usage = {
+                "input_tokens": getattr(response, "usage_metadata", {}).get("input_tokens", 0),
+                "output_tokens": getattr(response, "usage_metadata", {}).get("output_tokens", 0)
+            }
+        except Exception as e:
+            err_str = str(e)
+            print(f"LLM Call Error: {err_str}")
+            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                answer = "Hello! Google Gemini API rate limit / quota was temporarily reached. Please wait a moment and try again."
+            else:
+                answer = f"An error occurred while connecting to the AI language model: {err_str}"
         
         # 8. Hallucination Reduction (Validation)
         is_grounded = self._validate_answer(answer, context)

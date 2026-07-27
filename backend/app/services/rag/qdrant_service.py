@@ -78,16 +78,25 @@ class QdrantService:
             )
         
         try:
-            results = self.client.search(
-                collection_name=self.collection_name,
-                query_vector=query_vector,
-                query_filter=models.Filter(must=must_filters),
-                limit=top_k
-            )
+            if hasattr(self.client, "query_points"):
+                response = self.client.query_points(
+                    collection_name=self.collection_name,
+                    query=query_vector,
+                    query_filter=models.Filter(must=must_filters),
+                    limit=top_k
+                )
+                results = response.points
+            else:
+                results = self.client.search(
+                    collection_name=self.collection_name,
+                    query_vector=query_vector,
+                    query_filter=models.Filter(must=must_filters),
+                    limit=top_k
+                )
             retrieved = []
             for res in results:
                 payload = res.payload or {}
-                payload["score"] = res.score
+                payload["score"] = getattr(res, "score", 0.0)
                 retrieved.append(payload)
             return retrieved
         except Exception as e:
