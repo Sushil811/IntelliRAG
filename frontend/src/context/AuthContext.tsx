@@ -62,7 +62,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const accessToken = response.data.access_token;
     localStorage.setItem('intellirag_token', accessToken);
     setToken(accessToken);
-    await fetchCurrentUser();
+    
+    const userRes = await authAxios.get('/auth/me', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    setUser(userRes.data);
   };
 
   const register = async (email: string, password: string, fullName: string, orgName: string) => {
