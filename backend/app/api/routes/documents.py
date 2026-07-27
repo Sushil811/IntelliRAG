@@ -22,26 +22,36 @@ ingestion_service = DocumentIngestionService(qdrant_service, embedding_provider)
 import asyncio
 from app.db.session import AsyncSessionLocal
 
-async def update_doc_status(document_id: str, status: DocumentStatus):
+async def process_document_task(file_content: bytes, file_type: str, document_id: str, tenant_id: str):
     try:
+        await asyncio.to_thread(
+            ingestion_service.process_document, 
+            file_content, 
+            file_type, 
+            document_id, 
+            tenant_id
+        )
         async with AsyncSessionLocal() as session:
             result = await session.execute(
                 select(Document).where(Document.id == uuid.UUID(document_id))
             )
             doc = result.scalars().first()
             if doc:
-                doc.status = status
+                doc.status = DocumentStatus.READY
                 await session.commit()
     except Exception as e:
-        print(f"Error updating doc status in DB: {e}")
-
-def process_document_task(file_content: bytes, file_type: str, document_id: str, tenant_id: str):
-    try:
-        ingestion_service.process_document(file_content, file_type, document_id, tenant_id)
-        asyncio.run(update_doc_status(document_id, DocumentStatus.READY))
-    except Exception as e:
         print(f"Error processing document {document_id}: {e}")
-        asyncio.run(update_doc_status(document_id, DocumentStatus.FAILED))
+        try:
+            async with AsyncSessionLocal() as session:
+                result = await session.execute(
+                    select(Document).where(Document.id == uuid.UUID(document_id))
+                )
+                doc = result.scalars().first()
+                if doc:
+                    doc.status = DocumentStatus.FAILED
+                    await session.commit()
+        except Exception as db_err:
+            print(f"Error setting doc status to FAILED: {db_err}")
 
 
 @router.post("/upload")
