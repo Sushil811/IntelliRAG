@@ -7,7 +7,17 @@
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
+**IntelliRAG | Production Enterprise AI Knowledge Copilot & Hybrid RAG System**
 **IntelliRAG** is an end-to-end, enterprise-ready **Retrieval-Augmented Generation (RAG)** platform designed to eliminate hallucinations, enforce strict multi-tenant data isolation, and provide lightning-fast, factual search across enterprise knowledge bases (PDFs, DOCX, TXT, MD, CSV).
+
+
+Tech Stack: Python (FastAPI), React 18, TypeScript, PostgreSQL (Supabase), Qdrant Cloud Vector DB, Google Gemini, Cohere Rerank, BM25, Docker
+
+• Architected an enterprise Hybrid RAG platform combining Dense Vector Search (Qdrant 768-D) and Sparse Keyword Search (Rank-BM25) merged via Reciprocal Rank Fusion (RRF) and Cohere Rerank v3.
+• Implemented non-blocking async document ingestion using FastAPI BackgroundTasks & asyncio.to_thread, transitioning document state (PROCESSING ➔ READY) across PDF, DOCX, CSV formats.
+• Engineered strict multi-tenant data isolation using Qdrant payload field filters and PostgreSQL organization-level UUID scoping.
+• Developed a responsive Glassmorphic dashboard using React 18, TypeScript, and TanStack React Query with real-time semantic chunk inspection and latency analytics.
+
 
 ---
 
