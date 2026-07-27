@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     params.append('username', email.trim().toLowerCase());
     params.append('password', password);
 
-    const response = await authAxios.post('/auth/login', params, {
+    const response = await authAxios.post('/auth/login', params.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
