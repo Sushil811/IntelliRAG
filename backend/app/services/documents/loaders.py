@@ -36,6 +36,9 @@ def extract_text(file_content: bytes, file_type: str) -> str:
     elif file_type == "csv":
         return extract_text_from_csv(file_content)
     elif file_type in ["txt", "md", "markdown"]:
-        return file_content.decode("utf-8")
+        try:
+            return file_content.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            return file_content.decode("latin-1", errors="ignore")
     else:
         raise ValueError(f"Unsupported file type: {file_type}")
