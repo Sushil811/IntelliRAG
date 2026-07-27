@@ -8,6 +8,8 @@
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
 **IntelliRAG | Production Enterprise AI Knowledge Copilot & Hybrid RAG System**
+
+
 **IntelliRAG** is an end-to-end, enterprise-ready **Retrieval-Augmented Generation (RAG)** platform designed to eliminate hallucinations, enforce strict multi-tenant data isolation, and provide lightning-fast, factual search across enterprise knowledge bases (PDFs, DOCX, TXT, MD, CSV).
 
 
