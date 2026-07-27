@@ -6,6 +6,10 @@ import AuthLayout from '@/layouts/AuthLayout';
 import Chat from '@/pages/Chat';
 import Documents from '@/pages/Documents';
 import Dashboard from '@/pages/Dashboard';
+import KnowledgeBase from '@/pages/KnowledgeBase';
+import AnalyticsPage from '@/pages/AnalyticsPage';
+import EvaluationsPage from '@/pages/EvaluationsPage';
+import SettingsPage from '@/pages/SettingsPage';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 
@@ -41,10 +45,10 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/documents" element={<Documents />} />
-                <Route path="/knowledge-base" element={<div className="p-8 font-bold text-gray-800 dark:text-white">Knowledge Base System</div>} />
-                <Route path="/analytics" element={<div className="p-8 font-bold text-gray-800 dark:text-white">Detailed Analytics System</div>} />
-                <Route path="/evaluations" element={<div className="p-8 font-bold text-gray-800 dark:text-white font-bold">AI RAG Evaluations</div>} />
-                <Route path="/settings" element={<div className="p-8 font-bold text-gray-800 dark:text-white">System Settings</div>} />
+                <Route path="/knowledge-base" element={<KnowledgeBase />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/evaluations" element={<EvaluationsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
               </Route>
             </Route>
