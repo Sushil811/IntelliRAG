@@ -16,22 +16,23 @@ router = APIRouter()
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
+    clean_email = user_in.email.strip().lower()
     # Check if user exists
-    result = await db.execute(select(User).where(User.email == user_in.email))
+    result = await db.execute(select(User).where(User.email == clean_email))
     if result.scalars().first():
         raise HTTPException(
             status_code=400,
-            detail="The user with this username already exists in the system.",
+            detail="The user with this email already exists in the system.",
         )
     
-    # Create or find organization (for simplicity, creating new org for now)
+    # Create or find organization
     org = Organization(name=user_in.organization_name)
     db.add(org)
     await db.flush() # flush to get org.id
     
     # Create user
     user = User(
-        email=user_in.email,
+        email=clean_email,
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
         role=RoleEnum.ADMIN, # First user in the org is ADMIN
@@ -48,7 +49,8 @@ async def login_access_token(
     db: AsyncSession = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ):
-    result = await db.execute(select(User).where(User.email == form_data.username))
+    clean_email = form_data.username.strip().lower()
+    result = await db.execute(select(User).where(User.email == clean_email))
     user = result.scalars().first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
