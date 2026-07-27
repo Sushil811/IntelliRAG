@@ -1,149 +1,219 @@
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar
-} from 'recharts';
-import { Users, FileText, MessageSquare, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  MessageSquare, 
+  UploadCloud, 
+  Database, 
+  Sparkles, 
+  Zap, 
+  ArrowRight, 
+  ShieldCheck, 
+  CheckCircle2, 
+  Clock,
+  Activity
+} from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { authAxios, useAuth } from '@/context/AuthContext';
 
-const data = [
-  { name: 'Mon', queries: 400, documents: 24 },
-  { name: 'Tue', queries: 300, documents: 13 },
-  { name: 'Wed', queries: 550, documents: 45 },
-  { name: 'Thu', queries: 278, documents: 39 },
-  { name: 'Fri', queries: 189, documents: 48 },
-  { name: 'Sat', queries: 239, documents: 38 },
-  { name: 'Sun', queries: 349, documents: 43 },
-];
+interface DocumentItem {
+  id: string;
+  name: string;
+  file_type: string;
+  status: string;
+  created_at?: string;
+}
 
 const containerVariants: any = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
 
 const itemVariants: any = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 15 },
   visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Fetch real document activity from backend API
+  const { data: docs = [] } = useQuery<DocumentItem[]>({
+    queryKey: ['documents'],
+    queryFn: async () => {
+      const response = await authAxios.get('/documents/');
+      return response.data;
+    }
+  });
+
+  const recentDocs = docs.slice(0, 4);
+
+  const QUICK_PROMPTS = [
+    { title: 'Security & Auth Policy', query: 'What is the authentication requirement and latency target for IntelliRAG?' },
+    { title: 'Document Ingestion Guide', query: 'How does the hybrid search and vector ingestion process work in IntelliRAG?' },
+    { title: 'Deployment Specifications', query: 'Where are the backend and frontend components targeted for deployment?' },
+    { title: 'System Architecture', query: 'Explain the Qdrant vector database and RAG pipeline architecture.' },
+  ];
+
+  const handleLaunchPrompt = (query: string) => {
+    navigate('/chat', { state: { initialQuery: query } });
+  };
+
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-8"
-    >
-      <motion.div variants={itemVariants}>
-        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Analytics Overview</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Monitor your AI copilot's performance and usage</p>
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
+      
+      {/* Welcome Hero Banner */}
+      <motion.div variants={itemVariants} className="relative overflow-hidden bg-gradient-to-r from-blue-900/60 via-indigo-900/50 to-purple-900/60 backdrop-blur-2xl p-8 rounded-3xl border border-white/20 dark:border-gray-700/50 shadow-2xl">
+        <div className="absolute -right-10 -bottom-10 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-1/3 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-400/30 mb-4">
+              <Sparkles size={14} /> Enterprise AI Knowledge Hub
+            </div>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+              Welcome back, {user?.full_name || 'Admin'}! 👋
+            </h2>
+            <p className="text-blue-100/80 mt-2 font-medium leading-relaxed">
+              Your IntelliRAG AI copilot is active, indexed, and ready to assist with enterprise knowledge retrieval.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <motion.button 
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => navigate('/chat')}
+              className="px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl flex items-center gap-2 shadow-lg transition-all"
+            >
+              <MessageSquare size={18} />
+              Open AI Copilot
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => navigate('/documents')}
+              className="px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl border border-white/20 backdrop-blur-md flex items-center gap-2 transition-all"
+            >
+              <UploadCloud size={18} />
+              Upload Document
+            </motion.button>
+          </div>
+        </div>
       </motion.div>
 
-      {/* KPI Cards */}
+      {/* System Infrastructure Health Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { title: 'Total Documents', value: '1,284', icon: FileText, change: '+12%', color: 'text-blue-500', bg: 'bg-blue-500/10' },
-          { title: 'Active Users', value: '842', icon: Users, change: '+5%', color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-          { title: 'Queries Today', value: '3,492', icon: MessageSquare, change: '+24%', color: 'text-purple-500', bg: 'bg-purple-500/10' },
-          { title: 'Avg Latency', value: '840ms', icon: Zap, change: '-15%', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-        ].map((kpi, i) => {
-          const Icon = kpi.icon;
-          const isPositive = kpi.change.startsWith('+');
+          { title: 'Vector Store', status: 'Qdrant Cloud (Online)', icon: Database, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+          { title: 'AI Model', status: 'Gemini Flash Latest', icon: Zap, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+          { title: 'Retrieval Engine', status: 'Hybrid RRF + Cohere', icon: Activity, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          { title: 'Primary DB', status: 'Supabase PostgreSQL', icon: ShieldCheck, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+        ].map((sys, i) => {
+          const Icon = sys.icon;
           return (
             <motion.div 
               key={i} 
               variants={itemVariants}
-              whileHover={{ y: -4, scale: 1.02 }}
-              className="relative overflow-hidden bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl p-6 rounded-2xl border border-white/20 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300 group"
+              whileHover={{ y: -3 }}
+              className="bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl p-6 rounded-3xl border border-white/20 dark:border-gray-700/50 shadow-md flex items-center gap-4"
             >
-              <div className="absolute top-0 right-0 p-32 bg-gradient-to-br from-transparent to-white/5 dark:to-white/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-bl-full" />
-              <div className="flex items-center justify-between mb-4 relative z-10">
-                <div className={`w-12 h-12 rounded-xl ${kpi.bg} flex items-center justify-center shadow-inner`}>
-                  <Icon className={`w-6 h-6 ${kpi.color}`} />
-                </div>
-                <span className={`text-sm font-bold px-2.5 py-1 rounded-full ${isPositive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'}`}>
-                  {kpi.change}
-                </span>
+              <div className={`w-12 h-12 rounded-2xl ${sys.bg} flex items-center justify-center flex-shrink-0`}>
+                <Icon className={`w-6 h-6 ${sys.color}`} />
               </div>
-              <h3 className="text-gray-500 dark:text-gray-400 text-sm font-semibold tracking-wide uppercase relative z-10">{kpi.title}</h3>
-              <p className="text-4xl font-extrabold text-gray-900 dark:text-white mt-2 tracking-tight relative z-10">{kpi.value}</p>
+              <div className="overflow-hidden">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{sys.title}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white truncate mt-0.5">{sys.status}</p>
+              </div>
             </motion.div>
           );
         })}
       </div>
 
-      {/* Charts */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <motion.div 
-          whileHover={{ y: -2 }}
-          className="bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-gray-700/50 shadow-lg"
-        >
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-8 tracking-tight">Search Queries (7 Days)</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <defs>
-                  <linearGradient id="colorQueries" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <Line 
-                  type="monotone" 
-                  dataKey="queries" 
-                  stroke="#3b82f6" 
-                  strokeWidth={4} 
-                  dot={{ r: 5, fill: "#fff", strokeWidth: 3, stroke: "#3b82f6" }} 
-                  activeDot={{ r: 8, strokeWidth: 0, fill: "#2563eb" }} 
-                />
-                <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" vertical={false} opacity={0.5} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13, fontWeight: 500 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13, fontWeight: 500 }} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)', color: '#1f2937', fontWeight: 600 }}
-                  cursor={{ stroke: '#9ca3af', strokeWidth: 1, strokeDasharray: '4 4' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+      {/* Recommended Copilot Prompts & Recent Documents */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Recommended Prompts */}
+        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Copilot Quick Actions</h3>
+            <span className="text-xs font-semibold text-gray-400">Click to ask AI Copilot</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {QUICK_PROMPTS.map((prompt, i) => (
+              <motion.div 
+                key={i}
+                whileHover={{ scale: 1.02, x: 4 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleLaunchPrompt(prompt.query)}
+                className="bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl p-6 rounded-3xl border border-white/20 dark:border-gray-700/50 shadow-md cursor-pointer hover:shadow-lg transition-all group flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="p-2 rounded-xl bg-purple-500/10 text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                      <Sparkles size={16} />
+                    </span>
+                    <ArrowRight size={16} className="text-gray-400 group-hover:text-purple-500 transition-colors" />
+                  </div>
+                  <h4 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-purple-500 transition-colors mb-1">
+                    {prompt.title}
+                  </h4>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 line-clamp-2">
+                    "{prompt.query}"
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
 
-        <motion.div 
-          whileHover={{ y: -2 }}
-          className="bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-gray-700/50 shadow-lg"
-        >
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-8 tracking-tight">Documents Indexed</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <defs>
-                  <linearGradient id="colorDocs" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity={1}/>
-                    <stop offset="100%" stopColor="#c4b5fd" stopOpacity={0.8}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" vertical={false} opacity={0.5} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13, fontWeight: 500 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 13, fontWeight: 500 }} />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(139, 92, 246, 0.05)' }}
-                  contentStyle={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)', color: '#1f2937', fontWeight: 600 }}
-                />
-                <Bar dataKey="documents" fill="url(#colorDocs)" radius={[6, 6, 0, 0]} maxBarSize={45} />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Recent Knowledge Activity */}
+        <motion.div variants={itemVariants} className="bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl p-6 rounded-3xl border border-white/20 dark:border-gray-700/50 shadow-lg flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Recent Knowledge</h3>
+              <button 
+                onClick={() => navigate('/documents')}
+                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                View All
+              </button>
+            </div>
+
+            {recentDocs.length === 0 ? (
+              <div className="text-center py-10 text-gray-400 font-medium text-sm">
+                No documents uploaded yet. Upload a document to start building your AI copilot's knowledge base.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentDocs.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-3 rounded-2xl bg-white/40 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700/50">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center flex-shrink-0 font-bold text-xs uppercase">
+                        {doc.file_type}
+                      </div>
+                      <div className="truncate">
+                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{doc.name}</p>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{doc.file_type}</p>
+                      </div>
+                    </div>
+                    <span className="flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">
+                      <CheckCircle2 size={12} className="inline mr-1" /> Ready
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-gray-200/50 dark:border-gray-700/50 flex items-center justify-between text-xs font-semibold text-gray-400">
+            <span className="flex items-center gap-1.5"><Clock size={14} /> Total: {docs.length} Knowledge Documents</span>
           </div>
         </motion.div>
-      </motion.div>
+
+      </div>
     </motion.div>
   );
 }

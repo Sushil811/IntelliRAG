@@ -11,7 +11,12 @@ interface Message {
   sources?: Array<{ document_name: string; page: number; section: string; score: number }>;
 }
 
+import { useLocation } from 'react-router-dom';
+
 export default function Chat() {
+  const location = useLocation();
+  const initialQuery = location.state?.initialQuery || '';
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -57,6 +62,14 @@ export default function Chat() {
       ]);
     }
   });
+
+  useEffect(() => {
+    if (initialQuery) {
+      const userMessage: Message = { id: Math.random().toString(), role: 'user', content: initialQuery };
+      setMessages(prev => [...prev, userMessage]);
+      chatMutation.mutate(initialQuery);
+    }
+  }, [initialQuery]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
