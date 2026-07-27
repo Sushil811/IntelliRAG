@@ -1,0 +1,52 @@
+# FastAPI & Web
+fastapi
+uvicorn[standard]
+python-multipart
+httpx
+sse-starlette
+
+# Database
+sqlalchemy
+alembic
+psycopg2-binary
+asyncpg
+
+# Security
+passlib[bcrypt]
+PyJWT
+python-jose[cryptography]
+bcrypt
+
+# AI & LLM
+langchain
+langchain-core
+langchain-community
+langchain-google-genai
+langchain-openai
+langgraph
+google-generativeai
+openai
+cohere
+
+# Vector DB & Search
+qdrant-client
+rank_bm25
+
+# Document Processing
+pypdf
+python-docx
+
+# Observability & Evals
+langfuse
+ragas
+datasets
+
+# Utils
+pydantic
+pydantic-settings
+python-dotenv
+tenacity
+
+# Testing
+pytest
+pytest-asyncio
