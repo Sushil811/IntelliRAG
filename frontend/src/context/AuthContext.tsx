@@ -21,19 +21,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+import { BACKEND_URL, apiClient } from '@/api';
 
-export const authAxios = axios.create({
-  baseURL: API_BASE_URL,
-});
-
-authAxios.interceptors.request.use((config) => {
-  const token = localStorage.getItem('intellirag_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+export const API_BASE_URL = BACKEND_URL;
+export const authAxios = apiClient;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('intellirag_token'));
