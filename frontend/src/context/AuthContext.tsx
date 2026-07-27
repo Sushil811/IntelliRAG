@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
 
 interface User {
   id: string;
@@ -52,12 +51,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [token]);
 
   const login = async (email: string, password: string) => {
-    const formData = new FormData();
-    formData.append('username', email);
-    formData.append('password', password);
+    const params = new URLSearchParams();
+    params.append('username', email.trim().toLowerCase());
+    params.append('password', password);
 
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+    const response = await authAxios.post('/auth/login', params, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
     const accessToken = response.data.access_token;
@@ -67,8 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (email: string, password: string, fullName: string, orgName: string) => {
-    await axios.post(`${API_BASE_URL}/auth/register`, {
-      email,
+    await authAxios.post('/auth/register', {
+      email: email.trim().toLowerCase(),
       password,
       full_name: fullName,
       organization_name: orgName
