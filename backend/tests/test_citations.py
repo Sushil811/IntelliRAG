@@ -159,4 +159,15 @@ def test_rag_pipeline_context_and_sources_format():
     assert sources[0]["page_number"] == 5
     assert sources[0]["page"] == 5
 
+def test_normalize_hallucinated_citation():
+    from app.services.rag.pipeline import _normalize_and_verify_citations
+    reranked = [
+        {"document_name": "Employee_Handbook.pdf", "page_number": 5, "text": "Vacation policy..."}
+    ]
+    # LLM hallucinated page 99
+    llm_output = "Employees get 20 days. [Source: Employee_Handbook.pdf, Page 99]"
+    normalized = _normalize_and_verify_citations(llm_output, reranked)
+    assert normalized == "Employees get 20 days. [Source: Employee_Handbook.pdf, Page 5]"
+
+
 

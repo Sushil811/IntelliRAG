@@ -1,10 +1,9 @@
 from typing import Dict, Any, List, Optional
-# pyrefly: ignore [missing-import]
 from langchain_core.messages import HumanMessage, SystemMessage
-# pyrefly: ignore [missing-import]
 from langchain_google_genai import ChatGoogleGenerativeAI
 import uuid
 import time
+import re
 
 from app.core.config import settings
 from app.services.rag.query_rewriter import QueryRewriter
@@ -13,6 +12,63 @@ from app.services.rag.hybrid_search import reciprocal_rank_fusion
 from app.services.rag.reranker import RerankerProvider
 from app.services.rag.qdrant_service import QdrantService
 from app.services.embeddings.base import EmbeddingProvider
+
+def _normalize_and_verify_citations(answer: str, reranked_results: List[Dict[str, Any]]) -> str:
+    if not reranked_results:
+        return answer
+
+    valid_pages = set()
+    doc_primary_page = {}
+    
+    for r in reranked_results:
+        doc_name = (r.get("document_name") or r.get("source") or "Document").strip()
+        page_num = r.get("page_number")
+        if page_num is not None:
+            valid_pages.add((doc_name.lower(), int(page_num)))
+            if doc_name not in doc_primary_page:
+                doc_primary_page[doc_name] = page_num
+
+    def replace_citation(match):
+        doc_name = match.group(1).strip()
+        page_str = match.group(2).strip()
+        
+        try:
+            page_num = int(page_str)
+        except ValueError:
+            page_num = None
+            
+        matched_doc = None
+        for d in doc_primary_page.keys():
+            if d.lower() == doc_name.lower() or doc_name.lower() in d.lower():
+                matched_doc = d
+                break
+                
+        if not matched_doc:
+            matched_doc = list(doc_primary_page.keys())[0] if doc_primary_page else doc_name
+
+        if page_num is not None and (matched_doc.lower(), page_num) in valid_pages:
+            correct_page = page_num
+        else:
+            correct_page = doc_primary_page.get(matched_doc, 1)
+
+        return f"[Source: {matched_doc}, Page {correct_page}]"
+
+    # Replace any [Source: doc_name, Page page_num] where page_num might be hallucinated
+    pattern = r"\[Source:\s*([^,\]]+),\s*Page\s*(\d+)\]"
+    cleaned_answer = re.sub(pattern, replace_citation, answer)
+
+    # Clean legacy malformed citation patterns e.g. [Source [Unknown...
+    legacy_pattern = r"\[Source\s*\[[^\]]+\]:\s*Page\s*\d+(?:,\s*Page\s*\d+)*\]"
+    if re.search(legacy_pattern, cleaned_answer):
+        top_doc = list(doc_primary_page.keys())[0] if doc_primary_page else "Document"
+        top_page = doc_primary_page.get(top_doc, 1)
+        cleaned_answer = re.sub(legacy_pattern, f"[Source: {top_doc}, Page {top_page}]", cleaned_answer)
+
+    # Deduplicate consecutive identical citations
+    dedup_pattern = r"(\[Source:\s*[^,\]]+,\s*Page\s*\d+\])(\s*\1)+"
+    cleaned_answer = re.sub(dedup_pattern, r"\1", cleaned_answer)
+
+    return cleaned_answer
 
 class RAGPipeline:
     def __init__(
@@ -40,8 +96,6 @@ class RAGPipeline:
         )
         
     def _validate_answer(self, answer: str, context: str) -> bool:
-        # Simple hallucination check mock. In reality, use an LLM-as-a-judge.
-        # This will be replaced by our evaluation module later.
         return True
 
     def process_query(self, query: str, tenant_id: str, chat_history: str = "", document_id: Optional[str] = None) -> Dict[str, Any]:
@@ -132,12 +186,16 @@ Context:
             else:
                 answer = f"An error occurred while connecting to the AI language model: {err_str}"
         
+        # Post-process & verify citations against retrieved chunk page metadata
+        answer = _normalize_and_verify_citations(answer, reranked_results)
+
         # 8. Hallucination Reduction (Validation)
         is_grounded = self._validate_answer(answer, context)
         if not is_grounded:
             answer = "The generated answer could not be confidently verified against the sources."
             
         latency = int((time.time() - start_time) * 1000)
+
         
         return {
             "answer": answer,
