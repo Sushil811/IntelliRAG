@@ -11,17 +11,28 @@ from app.services.rag.query_rewriter import QueryRewriter
 from app.services.rag.bm25 import BM25Service
 from app.services.rag.hybrid_search import reciprocal_rank_fusion
 from app.services.rag.reranker import RerankerProvider
+from app.services.rag.qdrant_service import QdrantService
+from app.services.embeddings.base import EmbeddingProvider
 
 class RAGPipeline:
     def __init__(
         self,
         query_rewriter: QueryRewriter,
         bm25_service: BM25Service,
-        reranker: RerankerProvider
+        reranker: RerankerProvider,
+        qdrant_service: Optional[QdrantService] = None,
+        embedding_provider: Optional[EmbeddingProvider] = None
     ):
         self.query_rewriter = query_rewriter
         self.bm25 = bm25_service
         self.reranker = reranker
+        self.qdrant = qdrant_service or QdrantService()
+        if embedding_provider:
+            self.embedding_provider = embedding_provider
+        else:
+            from app.services.embeddings.gemini import GeminiEmbeddingProvider
+            self.embedding_provider = GeminiEmbeddingProvider()
+
         self.llm = ChatGoogleGenerativeAI(
             model=settings.GEMINI_MODEL,
             google_api_key=settings.GEMINI_API_KEY or "dummy_key",
@@ -39,9 +50,18 @@ class RAGPipeline:
         # 1. Query Rewriting
         rewritten_query = self.query_rewriter.rewrite(query, chat_history)
         
-        # 2. Vector Search (Mocked here since Qdrant is separate, in a real integration we'd call QdrantService)
-        # We assume qdrant returns `vector_results`
+        # 2. Vector Search via Qdrant
         vector_results = []
+        try:
+            query_vector = self.embedding_provider.get_embedding(rewritten_query)
+            vector_results = self.qdrant.search_chunks(
+                query_vector=query_vector,
+                tenant_id=tenant_id,
+                document_id=document_id,
+                top_k=5
+            )
+        except Exception as e:
+            print(f"Vector search failed: {e}")
         
         # 3. BM25 Search
         bm25_results = self.bm25.search(rewritten_query, tenant_id, document_id)

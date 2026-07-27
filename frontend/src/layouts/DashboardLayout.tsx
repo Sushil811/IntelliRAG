@@ -6,9 +6,11 @@ import {
   Library, 
   BarChart3, 
   CheckSquare, 
-  Settings 
+  Settings,
+  LogOut
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/context/AuthContext';
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -22,6 +24,9 @@ const navItems = [
 
 export default function DashboardLayout() {
   const location = useLocation();
+  const { user, logout } = useAuth();
+
+  const userInitial = user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-950 text-gray-900 dark:text-gray-100 font-sans selection:bg-blue-500/30">
@@ -77,19 +82,25 @@ export default function DashboardLayout() {
           })}
         </nav>
         
-        <div className="p-6 mt-auto">
-          <motion.div 
-            whileHover={{ scale: 1.02 }}
-            className="flex items-center gap-3 p-3 rounded-xl bg-white/40 dark:bg-gray-800/50 backdrop-blur-md border border-white/20 dark:border-white/5 cursor-pointer shadow-sm hover:shadow-md transition-all"
-          >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 text-white flex items-center justify-center font-bold shadow-inner">
-              A
+        <div className="p-4 border-t border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-white/40 dark:bg-gray-800/50 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-sm">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 text-white flex items-center justify-center font-bold shadow-inner flex-shrink-0">
+                {userInitial}
+              </div>
+              <div className="flex flex-col truncate">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.full_name || 'User'}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email || 'Logged in'}</span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">Admin User</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">Acme Corp</span>
-            </div>
-          </motion.div>
+            <button 
+              onClick={logout}
+              title="Log out"
+              className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all flex-shrink-0"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </aside>
 

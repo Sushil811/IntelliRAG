@@ -2,7 +2,7 @@
 from qdrant_client import QdrantClient
 # pyrefly: ignore [missing-import]
 from qdrant_client.http import models
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from app.core.config import settings
 
 class QdrantService:
@@ -39,10 +39,11 @@ class QdrantService:
             )
 
     def insert_chunks(self, chunks: List[str], embeddings: List[List[float]], metadatas: List[Dict[str, Any]]):
+        if embeddings and len(embeddings) > 0:
+            self.init_collection(len(embeddings[0]))
+
         points = []
         for i, (chunk, emb, meta) in enumerate(zip(chunks, embeddings, metadatas)):
-            # meta should contain tenant_id, document_id, chunk_id, etc.
-            # We must ensure chunk_id is a UUID or integer. We'll use the UUID from DB
             point_id = str(meta.get("chunk_id")) 
             payload = {
                 "text": chunk,
@@ -61,6 +62,38 @@ class QdrantService:
             points=points
         )
         
+    def search_chunks(self, query_vector: List[float], tenant_id: str, document_id: Optional[str] = None, top_k: int = 5) -> List[Dict[str, Any]]:
+        must_filters = [
+            models.FieldCondition(
+                key="tenant_id",
+                match=models.MatchValue(value=str(tenant_id))
+            )
+        ]
+        if document_id:
+            must_filters.append(
+                models.FieldCondition(
+                    key="document_id",
+                    match=models.MatchValue(value=str(document_id))
+                )
+            )
+        
+        try:
+            results = self.client.search(
+                collection_name=self.collection_name,
+                query_vector=query_vector,
+                query_filter=models.Filter(must=must_filters),
+                limit=top_k
+            )
+            retrieved = []
+            for res in results:
+                payload = res.payload or {}
+                payload["score"] = res.score
+                retrieved.append(payload)
+            return retrieved
+        except Exception as e:
+            print(f"Error searching Qdrant: {e}")
+            return []
+
     def delete_document_chunks(self, tenant_id: str, document_id: str):
         self.client.delete(
             collection_name=self.collection_name,
@@ -79,3 +112,4 @@ class QdrantService:
                 )
             )
         )
+

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Paperclip, StopCircle, Sparkles } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
-import axios from 'axios';
+import { authAxios } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
@@ -32,7 +32,7 @@ export default function Chat() {
 
   const chatMutation = useMutation({
     mutationFn: async (query: string) => {
-      const response = await axios.post('http://localhost:8000/api/chat', { query });
+      const response = await authAxios.post('/chat/', { query });
       return response.data;
     },
     onSuccess: (data) => {

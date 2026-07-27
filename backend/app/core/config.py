@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     # LLM & AI Providers
     LLM_PROVIDER: str = "gemini" # gemini, openai
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "models/gemini-1.5-flash"
+    GEMINI_MODEL: str = "models/gemini-2.0-flash"
     
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-4o-mini"

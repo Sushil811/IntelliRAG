@@ -8,7 +8,7 @@ class GeminiEmbeddingProvider(EmbeddingProvider):
     def __init__(self):
         # We assume GEMINI_API_KEY is set in environment or settings
         self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
+            model="models/gemini-embedding-001",
             google_api_key=settings.GEMINI_API_KEY or "dummy_key_to_allow_app_startup"
         )
         self._dimension = 768 # models/embedding-001 dimension

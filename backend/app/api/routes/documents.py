@@ -19,14 +19,30 @@ qdrant_service = QdrantService()
 embedding_provider = GeminiEmbeddingProvider()
 ingestion_service = DocumentIngestionService(qdrant_service, embedding_provider)
 
+import asyncio
+from app.db.session import AsyncSessionLocal
+
+async def update_doc_status(document_id: str, status: DocumentStatus):
+    try:
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(Document).where(Document.id == uuid.UUID(document_id))
+            )
+            doc = result.scalars().first()
+            if doc:
+                doc.status = status
+                await session.commit()
+    except Exception as e:
+        print(f"Error updating doc status in DB: {e}")
+
 def process_document_task(file_content: bytes, file_type: str, document_id: str, tenant_id: str):
-    # This runs in background
     try:
         ingestion_service.process_document(file_content, file_type, document_id, tenant_id)
-        # Note: Ideally we update the DocumentStatus to READY in DB here via a new DB session
+        asyncio.run(update_doc_status(document_id, DocumentStatus.READY))
     except Exception as e:
         print(f"Error processing document {document_id}: {e}")
-        # Note: Update DocumentStatus to FAILED
+        asyncio.run(update_doc_status(document_id, DocumentStatus.FAILED))
+
 
 @router.post("/upload")
 async def upload_document(

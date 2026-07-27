@@ -10,6 +10,8 @@ from app.models.user import User, RoleEnum
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
+import uuid
+
 async def get_current_user(
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme)
@@ -23,10 +25,11 @@ async def get_current_user(
         payload = jwt.decode(
             token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
         )
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
             raise credentials_exception
-    except JWTError:
+        user_id = uuid.UUID(user_id_str)
+    except (JWTError, ValueError):
         raise credentials_exception
         
     result = await db.execute(select(User).where(User.id == user_id))
